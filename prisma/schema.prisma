@@ -49,6 +49,7 @@ model User {
   playlists     Playlist[]
   notes         Note[]
   watchHistory  WatchHistory[]
+  tags          Tag[]
 }
 
 model VerificationToken {
@@ -123,4 +124,36 @@ model WatchHistory {
 
   @@unique([userId, videoId])
   @@index([userId, lastWatched])
+}
+
+// Custom Tags for organizing videos, playlists, and channels
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#6366f1") // Default indigo color
+  createdAt DateTime @default(now())
+  
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     TaggedItem[]
+  
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+// Junction table for tagging videos, playlists, or channels
+model TaggedItem {
+  id         String   @id @default(cuid())
+  tagId      String
+  itemId     String   // YouTube video ID, playlist ID, or channel ID
+  itemType   String   // "video", "playlist", or "channel"
+  title      String?  // Cached title
+  thumbnail  String?  // Cached thumbnail
+  addedAt    DateTime @default(now())
+  
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@unique([tagId, itemId, itemType])
+  @@index([tagId])
+  @@index([itemId, itemType])
 }

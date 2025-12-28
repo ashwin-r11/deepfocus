@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { title, notes, due } = await request.json()
+    const { title, notes, due, parent, videoId, videoTitle } = await request.json()
 
     const oauth2Client = new google.auth.OAuth2()
     oauth2Client.setCredentials({ access_token: session.accessToken })
@@ -74,11 +74,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No task list found" }, { status: 404 })
     }
 
+    // Build notes with video link if provided
+    let taskNotes = notes || ""
+    if (videoId) {
+      const videoLink = `https://youtube.com/watch?v=${videoId}`
+      taskNotes = taskNotes 
+        ? `${taskNotes}\n\n📺 Video: ${videoTitle || "Watch Video"}\n${videoLink}`
+        : `📺 Video: ${videoTitle || "Watch Video"}\n${videoLink}`
+    }
+
     const response = await tasks.tasks.insert({
       tasklist: defaultList.id,
+      parent, // For subtasks - parent task ID
       requestBody: {
         title,
-        notes,
+        notes: taskNotes || undefined,
         due: due ? new Date(due).toISOString() : undefined,
       },
     })
@@ -86,7 +96,10 @@ export async function POST(request: Request) {
     return NextResponse.json({
       id: response.data.id,
       title: response.data.title,
+      notes: response.data.notes,
+      due: response.data.due,
       completed: false,
+      parent: response.data.parent,
     })
   } catch (error) {
     console.error("Create task error:", error)

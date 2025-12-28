@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useSession, signIn, signOut } from "next-auth/react"
 import { 
   Search, LogIn, LogOut, User, BookOpen, Play, Clock, 
   Shuffle, ListVideo, Calendar, CheckSquare, GraduationCap,
-  Trash2, Settings, ChevronRight, Plus, X, Loader2
+  Trash2, ChevronRight, Plus, X, Loader2, Users
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -187,9 +188,14 @@ export default function Home() {
     }, 300)
   }
 
+  const router = useRouter()
+  
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    handleSearch(searchQuery)
+    if (searchQuery.trim()) {
+      // Navigate to full search page
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}&type=${searchType}`)
+    }
   }
 
   const handleLucky = () => {
@@ -324,6 +330,12 @@ export default function Home() {
                     <p className="text-xs text-neutral-500">{session.user?.email}</p>
                   </div>
 
+                  <Link href="/subscriptions">
+                    <DropdownMenuItem className="text-neutral-300 focus:bg-neutral-900 focus:text-white cursor-pointer">
+                      <Users className="w-4 h-4 mr-2" />
+                      Subscriptions
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem 
                     onClick={() => signOut()}
                     className="text-neutral-300 focus:bg-neutral-900 focus:text-white cursor-pointer"

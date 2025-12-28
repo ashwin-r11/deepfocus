@@ -9,14 +9,11 @@ import { ToolsPanel } from "@/components/tools-panel"
 import { PlaylistModal } from "@/components/playlist-modal"
 import { ScheduleModal } from "@/components/schedule-modal"
 
-// Demo video data - will be replaced with API fetch
-const demoVideos: Record<string, { title: string; videoId: string; channelName?: string }> = {
-  "1": { videoId: "dQw4w9WgXcQ", title: "Demo Video" },
-  // Some educational videos for testing
-  "mit-algorithms": { videoId: "HtSuA80QTyo", title: "MIT 6.006 - Introduction to Algorithms", channelName: "MIT OpenCourseWare" },
-  "3blue1brown-linear": { videoId: "fNk_zzaMoSs", title: "3Blue1Brown - Essence of Linear Algebra", channelName: "3Blue1Brown" },
-  "computerphile-sorting": { videoId: "kPRA0W1kECg", title: "Computerphile - Sorting Algorithms", channelName: "Computerphile" },
-  "traversy-nodejs": { videoId: "fBNz5xF-Kx4", title: "Node.js Crash Course", channelName: "Traversy Media" },
+interface VideoInfo {
+  videoId: string
+  title: string
+  channelName?: string
+  description?: string
 }
 
 export default function WatchPage() {
@@ -24,14 +21,40 @@ export default function WatchPage() {
   const { data: session } = useSession()
   const id = params.id as string
   
-  // Get video info - defaults to MIT lecture if invalid ID
-  const videoInfo = demoVideos[id] || { videoId: id, title: "Video" }
-  
+  const [videoInfo, setVideoInfo] = useState<VideoInfo>({ videoId: id, title: "Loading..." })
+  const [isLoading, setIsLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [showPlaylistModal, setShowPlaylistModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const lastSaveRef = useRef(0)
+
+  // Fetch video info from YouTube API
+  useEffect(() => {
+    const fetchVideoInfo = async () => {
+      try {
+        const res = await fetch(`/api/youtube/video/${id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setVideoInfo({
+            videoId: id,
+            title: data.title || "Video",
+            channelName: data.channelTitle,
+            description: data.description,
+          })
+        } else {
+          setVideoInfo({ videoId: id, title: "Video" })
+        }
+      } catch (error) {
+        console.error("Error fetching video info:", error)
+        setVideoInfo({ videoId: id, title: "Video" })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchVideoInfo()
+  }, [id])
 
   // Save watch progress periodically (every 10 seconds of playback)
   const handleTimeUpdate = useCallback((time: number, videoDuration?: number) => {
