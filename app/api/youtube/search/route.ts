@@ -30,7 +30,6 @@ export async function GET(request: Request) {
       pageToken,
       relevanceLanguage: "en",
       safeSearch: "strict",
-      ...(type === "video" ? { videoCategoryId: "27" } : {}), // Education category for videos only
     })
 
     let items: any[] = []

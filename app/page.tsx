@@ -85,6 +85,9 @@ export default function Home() {
   const [isLoadingData, setIsLoadingData] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showTaskDialog, setShowTaskDialog] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState("")
+  const [isCreatingTask, setIsCreatingTask] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout>()
 
@@ -190,20 +193,65 @@ export default function Home() {
   }
 
   const handleLucky = () => {
-    // Pick random video from watch history or featured educational channels
-    if (watchHistory.length > 0) {
-      const random = watchHistory[Math.floor(Math.random() * watchHistory.length)]
-      window.location.href = `/watch/${random.videoId}`
-    } else {
-      // Default educational videos
-      const featured = [
-        "HtSuA80QTyo", // MIT Algorithms
-        "fNk_zzaMoSs", // 3Blue1Brown
-        "kPRA0W1kECg", // Computerphile
-        "fBNz5xF-Kx4", // Traversy Media
-      ]
-      const random = featured[Math.floor(Math.random() * featured.length)]
-      window.location.href = `/watch/${random}`
+    // Pick random video from featured educational channels
+    const featured = [
+      // MIT OpenCourseWare
+      "HtSuA80QTyo", // MIT Algorithms
+      "ZK3O402wf1c", // MIT Linear Algebra
+      "7K1sB05pE0A", // MIT Calculus
+      // 3Blue1Brown
+      "fNk_zzaMoSs", // Essence of Linear Algebra
+      "WUvTyaaNkzM", // Essence of Calculus
+      "spUNpyF58BY", // Neural Networks
+      // Veritasium
+      "HeQX2HjkcNo", // This is Math's Fatal Flaw
+      "OxGsU8oIWjY", // The Simplest Math Problem
+      // Computerphile
+      "kPRA0W1kECg", // Sorting Algorithms
+      "ySN5Wnu88nE", // Dijkstra's Algorithm
+      // CS50
+      "IDDmrzzB14M", // CS50 2023 Lecture 0
+      "cwtpLIWylAw", // CS50 Python
+      // Fireship
+      "Sxxw3qtb3_g", // 100 Seconds Series
+      "q1fsBWLpYW4", // TypeScript Tutorial
+      // Web Dev Simplified
+      "PoRJizFvM7s", // Learn React
+      // Network Chuck
+      "qiQR5rTSshw", // Linux Tutorial
+      // Traversy Media
+      "fBNz5xF-Kx4", // Node.js Crash Course
+      "w7ejDZ8SWv8", // React Crash Course
+      // Khan Academy
+      "WNuIhXo39_k", // Statistics
+      // CrashCourse
+      "tpIctyqH29Q", // Computer Science
+    ]
+    const random = featured[Math.floor(Math.random() * featured.length)]
+    window.location.href = `/watch/${random}`
+  }
+
+  const handleCreateTask = async () => {
+    if (!newTaskTitle.trim()) return
+    
+    setIsCreatingTask(true)
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTaskTitle }),
+      })
+      
+      if (res.ok) {
+        const newTask = await res.json()
+        setTasks(prev => [newTask, ...prev])
+        setNewTaskTitle("")
+        setShowTaskDialog(false)
+      }
+    } catch (error) {
+      console.error("Error creating task:", error)
+    } finally {
+      setIsCreatingTask(false)
     }
   }
 
@@ -275,11 +323,7 @@ export default function Home() {
                     <p className="text-sm font-medium text-neutral-200">{session.user?.name}</p>
                     <p className="text-xs text-neutral-500">{session.user?.email}</p>
                   </div>
-                  <DropdownMenuItem className="text-neutral-300 focus:bg-neutral-900 focus:text-white cursor-pointer">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-neutral-800" />
+
                   <DropdownMenuItem 
                     onClick={() => signOut()}
                     className="text-neutral-300 focus:bg-neutral-900 focus:text-white cursor-pointer"
@@ -540,9 +584,12 @@ export default function Home() {
                     <CheckSquare className="w-4 h-4 text-green-400" />
                     <h3 className="text-sm font-medium text-neutral-300">Tasks</h3>
                   </div>
-                  <Link href="/tasks" className="text-xs text-neutral-600 hover:text-neutral-400">
+                  <button 
+                    onClick={() => setShowTaskDialog(true)}
+                    className="text-neutral-600 hover:text-neutral-400 transition-colors"
+                  >
                     <Plus className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </div>
                 {isLoadingData ? (
                   <div className="space-y-2">
@@ -625,6 +672,50 @@ export default function Home() {
                 </>
               ) : (
                 "Delete Account"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Task Dialog */}
+      <Dialog open={showTaskDialog} onOpenChange={setShowTaskDialog}>
+        <DialogContent className="bg-neutral-950 border-neutral-800">
+          <DialogHeader>
+            <DialogTitle className="text-neutral-200">Create Task</DialogTitle>
+            <DialogDescription className="text-neutral-500">
+              Add a new task to your Google Tasks.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Task title..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateTask()}
+              className="bg-neutral-900 border-neutral-800 text-neutral-200 placeholder:text-neutral-600"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setShowTaskDialog(false)}
+              className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateTask}
+              disabled={isCreatingTask || !newTaskTitle.trim()}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isCreatingTask ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Task"
               )}
             </Button>
           </DialogFooter>
