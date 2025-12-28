@@ -7,6 +7,7 @@ import { VideoStage } from "@/components/video-stage"
 import { Notepad } from "@/components/notepad"
 import { ToolsPanel } from "@/components/tools-panel"
 import { PlaylistModal } from "@/components/playlist-modal"
+import { ScheduleModal } from "@/components/schedule-modal"
 
 // Demo video data - will be replaced with API fetch
 const demoVideos: Record<string, { title: string; videoId: string; channelName?: string }> = {
@@ -29,6 +30,7 @@ export default function WatchPage() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [showPlaylistModal, setShowPlaylistModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
   const lastSaveRef = useRef(0)
 
   // Save watch progress periodically (every 10 seconds of playback)
@@ -86,6 +88,7 @@ export default function WatchPage() {
             title={videoInfo.title}
             onTimeUpdate={handleTimeUpdate}
             onAddToPlaylist={() => setShowPlaylistModal(true)}
+            onScheduleVideo={() => setShowScheduleModal(true)}
           />
           {/* Tools Panel below video */}
           <ToolsPanel />
@@ -106,6 +109,17 @@ export default function WatchPage() {
           title: videoInfo.title,
           thumbnail: `https://img.youtube.com/vi/${videoInfo.videoId}/mqdefault.jpg`,
           channelName: videoInfo.channelName,
+        }}
+      />
+
+      {/* Schedule Modal */}
+      <ScheduleModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        video={{
+          videoId: videoInfo.videoId,
+          title: videoInfo.title,
+          thumbnail: `https://img.youtube.com/vi/${videoInfo.videoId}/mqdefault.jpg`,
         }}
       />
     </main>

@@ -5,7 +5,7 @@ import Link from "next/link"
 import YouTube, { YouTubePlayer, YouTubeEvent } from "react-youtube"
 import { 
   Play, Pause, Volume2, VolumeX, Maximize, Minimize, ArrowLeft, 
-  SkipBack, SkipForward, Subtitles, ListPlus, FileText 
+  SkipBack, SkipForward, Subtitles, ListPlus, FileText, CalendarPlus 
 } from "lucide-react"
 
 interface VideoStageProps {
@@ -13,6 +13,7 @@ interface VideoStageProps {
   title?: string
   onTimeUpdate?: (time: number) => void
   onAddToPlaylist?: () => void
+  onScheduleVideo?: () => void
 }
 
 function formatTime(seconds: number): string {
@@ -21,7 +22,7 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
 }
 
-export function VideoStage({ videoId, title, onTimeUpdate, onAddToPlaylist }: VideoStageProps) {
+export function VideoStage({ videoId, title, onTimeUpdate, onAddToPlaylist, onScheduleVideo }: VideoStageProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -286,6 +287,17 @@ export function VideoStage({ videoId, title, onTimeUpdate, onAddToPlaylist }: Vi
                 </button>
               )}
 
+              {/* Schedule to Tasks */}
+              {onScheduleVideo && (
+                <button
+                  onClick={onScheduleVideo}
+                  className="text-neutral-400 hover:text-white transition-colors p-1 touch-manipulation"
+                  title="Schedule to Google Tasks"
+                >
+                  <CalendarPlus className="w-5 h-5" />
+                </button>
+              )}
+
               {/* Fullscreen */}
               <button
                 onClick={handleFullscreen}
@@ -305,15 +317,26 @@ export function VideoStage({ videoId, title, onTimeUpdate, onAddToPlaylist }: Vi
           <h1 className="text-base sm:text-lg text-neutral-200 font-medium leading-tight">
             {title || "Select a video to start learning"}
           </h1>
-          {onAddToPlaylist && (
-            <button
-              onClick={onAddToPlaylist}
-              className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-md text-sm transition-colors shrink-0"
-            >
-              <ListPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Save</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {onScheduleVideo && (
+              <button
+                onClick={onScheduleVideo}
+                className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-md text-sm transition-colors"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Schedule</span>
+              </button>
+            )}
+            {onAddToPlaylist && (
+              <button
+                onClick={onAddToPlaylist}
+                className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-md text-sm transition-colors"
+              >
+                <ListPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Save</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
