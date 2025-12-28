@@ -2,23 +2,35 @@ import { NextResponse } from "next/server"
 import { google } from "googleapis"
 import { auth } from "@/lib/auth"
 
+async function createYouTubeClient(session: any) {
+  // Prefer API key for public data (more reliable, no token expiry issues)
+  if (process.env.YOUTUBE_API_KEY) {
+    return google.youtube({ version: "v3", auth: process.env.YOUTUBE_API_KEY })
+  }
+  
+  // Fallback to OAuth if API key not available
+  if (session?.accessToken) {
+    const oauth2Client = new google.auth.OAuth2()
+    oauth2Client.setCredentials({ access_token: session.accessToken })
+    return google.youtube({ version: "v3", auth: oauth2Client })
+  }
+  
+  return null
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  
-  if (!session?.accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   const { id: videoId } = await params
 
   try {
-    const oauth2Client = new google.auth.OAuth2()
-    oauth2Client.setCredentials({ access_token: session.accessToken })
-
-    const youtube = google.youtube({ version: "v3", auth: oauth2Client })
+    const youtube = await createYouTubeClient(session)
+    
+    if (!youtube) {
+      return NextResponse.json({ error: "No YouTube API credentials available" }, { status: 401 })
+    }
 
     const response = await youtube.videos.list({
       part: ["snippet", "contentDetails", "statistics"],
