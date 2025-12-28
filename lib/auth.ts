@@ -17,15 +17,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             "profile",
             // YouTube - read playlists and videos
             "https://www.googleapis.com/auth/youtube.readonly",
-            // Google Drive - create/edit files
+            // Google Drive - create/edit files + read all files
             "https://www.googleapis.com/auth/drive.file",
-            // Google Calendar - read events
-            "https://www.googleapis.com/auth/calendar.readonly",
+            "https://www.googleapis.com/auth/drive.readonly",
+            // Google Calendar - read/write events
+            "https://www.googleapis.com/auth/calendar",
             // Google Tasks - read/write tasks
             "https://www.googleapis.com/auth/tasks",
             // Google Classroom - read courses and coursework
             "https://www.googleapis.com/auth/classroom.courses.readonly",
             "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+            // Google Gemini AI - generative language
+            "https://www.googleapis.com/auth/generative-language.retriever",
           ].join(" "),
           access_type: "offline",
           prompt: "consent",

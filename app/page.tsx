@@ -7,7 +7,8 @@ import { useSession, signIn, signOut } from "next-auth/react"
 import { 
   Search, LogIn, LogOut, User, BookOpen, Play, Clock, 
   Shuffle, ListVideo, Calendar, CheckSquare, GraduationCap,
-  Trash2, ChevronRight, Plus, X, Loader2, Users
+  Trash2, ChevronRight, Plus, X, Loader2, Users, ExternalLink,
+  Check, Square
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -89,6 +90,13 @@ export default function Home() {
   const [showTaskDialog, setShowTaskDialog] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [isCreatingTask, setIsCreatingTask] = useState(false)
+  const [showCalendarDialog, setShowCalendarDialog] = useState(false)
+  const [showTasksDialog, setShowTasksDialog] = useState(false)
+  const [showClassroomDialog, setShowClassroomDialog] = useState(false)
+  const [newEventTitle, setNewEventTitle] = useState("")
+  const [newEventDate, setNewEventDate] = useState("")
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false)
+  const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout>()
 
@@ -258,6 +266,58 @@ export default function Home() {
       console.error("Error creating task:", error)
     } finally {
       setIsCreatingTask(false)
+    }
+  }
+
+  const handleToggleTask = async (taskId: string, currentStatus: string) => {
+    setTogglingTaskId(taskId)
+    try {
+      const newStatus = currentStatus === "completed" ? "needsAction" : "completed"
+      const res = await fetch("/api/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, status: newStatus }),
+      })
+      
+      if (res.ok) {
+        setTasks(prev => prev.map(task => 
+          task.id === taskId ? { ...task, status: newStatus } : task
+        ))
+      }
+    } catch (error) {
+      console.error("Error toggling task:", error)
+    } finally {
+      setTogglingTaskId(null)
+    }
+  }
+
+  const handleCreateEvent = async () => {
+    if (!newEventTitle.trim() || !newEventDate) return
+    
+    setIsCreatingEvent(true)
+    try {
+      const res = await fetch("/api/calendar/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          title: newEventTitle,
+          start: newEventDate,
+        }),
+      })
+      
+      if (res.ok) {
+        const newEvent = await res.json()
+        setCalendarEvents(prev => [...prev, newEvent].sort((a, b) => 
+          new Date(a.start).getTime() - new Date(b.start).getTime()
+        ))
+        setNewEventTitle("")
+        setNewEventDate("")
+        setShowCalendarDialog(false)
+      }
+    } catch (error) {
+      console.error("Error creating event:", error)
+    } finally {
+      setIsCreatingEvent(false)
     }
   }
 
@@ -564,10 +624,16 @@ export default function Home() {
             {/* Google Services Dashboard */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Calendar */}
-              <div className="bg-neutral-950 border border-neutral-900 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-4 h-4 text-blue-400" />
-                  <h3 className="text-sm font-medium text-neutral-300">Upcoming</h3>
+              <div 
+                onClick={() => setShowCalendarDialog(true)}
+                className="bg-neutral-950 border border-neutral-900 rounded-2xl p-4 cursor-pointer hover:border-neutral-800 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-400" />
+                    <h3 className="text-sm font-medium text-neutral-300">Upcoming</h3>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-neutral-600" />
                 </div>
                 {isLoadingData ? (
                   <div className="space-y-2">
@@ -590,18 +656,24 @@ export default function Home() {
               </div>
 
               {/* Tasks */}
-              <div className="bg-neutral-950 border border-neutral-900 rounded-2xl p-4">
+              <div 
+                onClick={() => setShowTasksDialog(true)}
+                className="bg-neutral-950 border border-neutral-900 rounded-2xl p-4 cursor-pointer hover:border-neutral-800 transition-colors"
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <CheckSquare className="w-4 h-4 text-green-400" />
                     <h3 className="text-sm font-medium text-neutral-300">Tasks</h3>
                   </div>
-                  <button 
-                    onClick={() => setShowTaskDialog(true)}
-                    className="text-neutral-600 hover:text-neutral-400 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setShowTaskDialog(true); }}
+                      className="text-neutral-600 hover:text-neutral-400 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <ChevronRight className="w-4 h-4 text-neutral-600" />
+                  </div>
                 </div>
                 {isLoadingData ? (
                   <div className="space-y-2">
@@ -626,10 +698,16 @@ export default function Home() {
               </div>
 
               {/* Classroom */}
-              <div className="bg-neutral-950 border border-neutral-900 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <GraduationCap className="w-4 h-4 text-yellow-400" />
-                  <h3 className="text-sm font-medium text-neutral-300">Assignments</h3>
+              <div 
+                onClick={() => setShowClassroomDialog(true)}
+                className="bg-neutral-950 border border-neutral-900 rounded-2xl p-4 cursor-pointer hover:border-neutral-800 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-yellow-400" />
+                    <h3 className="text-sm font-medium text-neutral-300">Assignments</h3>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-neutral-600" />
                 </div>
                 {isLoadingData ? (
                   <div className="space-y-2">
@@ -730,6 +808,212 @@ export default function Home() {
                 "Create Task"
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Expanded Dialog */}
+      <Dialog open={showCalendarDialog} onOpenChange={setShowCalendarDialog}>
+        <DialogContent className="bg-neutral-950 border-neutral-800 max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-neutral-200 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-400" />
+              Calendar Events
+            </DialogTitle>
+            <DialogDescription className="text-neutral-500">
+              View and create calendar events
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Create Event Form */}
+          <div className="flex gap-2 py-2 border-b border-neutral-800">
+            <Input
+              placeholder="Event title..."
+              value={newEventTitle}
+              onChange={(e) => setNewEventTitle(e.target.value)}
+              className="bg-neutral-900 border-neutral-800 text-neutral-200 placeholder:text-neutral-600"
+            />
+            <Input
+              type="datetime-local"
+              value={newEventDate}
+              onChange={(e) => setNewEventDate(e.target.value)}
+              className="bg-neutral-900 border-neutral-800 text-neutral-200 w-auto"
+            />
+            <Button
+              onClick={handleCreateEvent}
+              disabled={isCreatingEvent || !newEventTitle.trim() || !newEventDate}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isCreatingEvent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            </Button>
+          </div>
+          
+          {/* Events List */}
+          <div className="flex-1 overflow-y-auto py-2 space-y-2">
+            {calendarEvents.length > 0 ? (
+              calendarEvents.map((event) => (
+                <a
+                  key={event.id}
+                  href={`https://calendar.google.com/calendar/event?eid=${event.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-neutral-900 rounded-lg hover:bg-neutral-800 transition-colors group"
+                >
+                  <div>
+                    <p className="text-sm text-neutral-200 line-clamp-1">{event.title}</p>
+                    <p className="text-xs text-neutral-500">{formatDate(event.start)}</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400" />
+                </a>
+              ))
+            ) : (
+              <p className="text-sm text-neutral-600 text-center py-8">No upcoming events</p>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <a
+              href="https://calendar.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
+            >
+              Open Google Calendar <ExternalLink className="w-3 h-3" />
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tasks Expanded Dialog */}
+      <Dialog open={showTasksDialog} onOpenChange={setShowTasksDialog}>
+        <DialogContent className="bg-neutral-950 border-neutral-800 max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-neutral-200 flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-green-400" />
+              Tasks
+            </DialogTitle>
+            <DialogDescription className="text-neutral-500">
+              View and manage your Google Tasks
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Quick Add Task */}
+          <div className="flex gap-2 py-2 border-b border-neutral-800">
+            <Input
+              placeholder="Add a task..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateTask()}
+              className="bg-neutral-900 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 flex-1"
+            />
+            <Button
+              onClick={handleCreateTask}
+              disabled={isCreatingTask || !newTaskTitle.trim()}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isCreatingTask ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            </Button>
+          </div>
+          
+          {/* Tasks List */}
+          <div className="flex-1 overflow-y-auto py-2 space-y-2">
+            {tasks.length > 0 ? (
+              tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-3 p-3 bg-neutral-900 rounded-lg hover:bg-neutral-800 transition-colors"
+                >
+                  <button
+                    onClick={() => handleToggleTask(task.id, task.status)}
+                    disabled={togglingTaskId === task.id}
+                    className="shrink-0"
+                  >
+                    {togglingTaskId === task.id ? (
+                      <Loader2 className="w-5 h-5 text-neutral-500 animate-spin" />
+                    ) : task.status === "completed" ? (
+                      <Check className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <Square className="w-5 h-5 text-neutral-500 hover:text-neutral-300" />
+                    )}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm line-clamp-1 ${task.status === "completed" ? "text-neutral-500 line-through" : "text-neutral-200"}`}>
+                      {task.title}
+                    </p>
+                    {task.due && (
+                      <p className="text-xs text-neutral-500">Due: {formatDate(task.due)}</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-neutral-600 text-center py-8">No tasks</p>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <a
+              href="https://tasks.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-green-400 hover:text-green-300 flex items-center gap-1"
+            >
+              Open Google Tasks <ExternalLink className="w-3 h-3" />
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Classroom Expanded Dialog */}
+      <Dialog open={showClassroomDialog} onOpenChange={setShowClassroomDialog}>
+        <DialogContent className="bg-neutral-950 border-neutral-800 max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-neutral-200 flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-yellow-400" />
+              Assignments
+            </DialogTitle>
+            <DialogDescription className="text-neutral-500">
+              View your Google Classroom assignments
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Assignments List */}
+          <div className="flex-1 overflow-y-auto py-2 space-y-2">
+            {assignments.length > 0 ? (
+              assignments.map((assignment) => (
+                <a
+                  key={assignment.id}
+                  href={`https://classroom.google.com`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-neutral-900 rounded-lg hover:bg-neutral-800 transition-colors group"
+                >
+                  <div>
+                    <p className="text-sm text-neutral-200 line-clamp-1">{assignment.title}</p>
+                    <p className="text-xs text-neutral-500">{assignment.courseTitle}</p>
+                    {assignment.dueDate && (
+                      <p className="text-xs text-yellow-500 mt-1">Due: {formatDate(assignment.dueDate)}</p>
+                    )}
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400" />
+                </a>
+              ))
+            ) : (
+              <p className="text-sm text-neutral-600 text-center py-8">No pending assignments</p>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <a
+              href="https://classroom.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-yellow-400 hover:text-yellow-300 flex items-center gap-1"
+            >
+              Open Google Classroom <ExternalLink className="w-3 h-3" />
+            </a>
           </DialogFooter>
         </DialogContent>
       </Dialog>

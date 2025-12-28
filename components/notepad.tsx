@@ -19,6 +19,7 @@ interface Note {
 interface NotepadProps {
   videoId?: string
   currentVideoTime?: number
+  onNotesChange?: (notes: Note[]) => void
 }
 
 function formatTime(seconds: number): string {
@@ -52,13 +53,18 @@ function GoogleDriveLogo({ className }: { className?: string }) {
   )
 }
 
-export function Notepad({ videoId, currentVideoTime = 0 }: NotepadProps) {
+export function Notepad({ videoId, currentVideoTime = 0, onNotesChange }: NotepadProps) {
   const { data: session } = useSession()
   const [notes, setNotes] = useState<Note[]>([])
   const [inputValue, setInputValue] = useState("")
   const [exportSuccess, setExportSuccess] = useState(false)
   const [driveSync, setDriveSync] = useState<"idle" | "syncing" | "synced" | "error">("idle")
   const notesContainerRef = useRef<HTMLDivElement>(null)
+
+  // Notify parent of notes changes
+  useEffect(() => {
+    onNotesChange?.(notes)
+  }, [notes, onNotesChange])
 
   const handleExportToObsidian = () => {
     if (notes.length === 0) return

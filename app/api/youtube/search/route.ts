@@ -114,7 +114,7 @@ export async function GET(request: Request) {
         id: item.id?.channelId,
         title: item.snippet?.title,
         description: item.snippet?.description,
-        thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
+        thumbnailUrl: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
         channelTitle: item.snippet?.channelTitle,
         subscriberCount: item.id?.channelId ? channelDetails[item.id.channelId] : undefined,
         type: "channel",

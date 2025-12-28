@@ -468,11 +468,17 @@ export default function SearchPage() {
                   result.type === "playlist" ? `/playlist/${result.id}` :
                   `/channel/${result.id}`
                 }>
-                  <div className="relative aspect-video">
+                  <div className="relative aspect-video bg-neutral-800">
                     <img
-                      src={result.thumbnailUrl}
+                      src={result.thumbnailUrl || "/placeholder-video.png"}
                       alt={result.title}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://i.ytimg.com/vi/${result.id}/mqdefault.jpg`
+                        e.currentTarget.onerror = () => {
+                          e.currentTarget.src = "/placeholder-video.png"
+                        }
+                      }}
                     />
                     {result.type === "video" && result.duration && (
                       <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-white text-xs rounded">
@@ -486,9 +492,16 @@ export default function SearchPage() {
                       </div>
                     )}
                     {result.type === "channel" && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white">
-                          <img src={result.thumbnailUrl} alt={result.title} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-neutral-900">
+                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white bg-neutral-800">
+                          <img 
+                            src={result.thumbnailUrl || "/placeholder-avatar.png"} 
+                            alt={result.title} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder-avatar.png"
+                            }}
+                          />
                         </div>
                       </div>
                     )}
@@ -578,11 +591,19 @@ export default function SearchPage() {
                   result.type === "playlist" ? `/playlist/${result.id}` :
                   `/channel/${result.id}`
                 } className="shrink-0">
-                  <div className="relative w-64 aspect-video rounded-lg overflow-hidden">
+                  <div className="relative w-64 aspect-video rounded-lg overflow-hidden bg-neutral-800">
                     <img
-                      src={result.thumbnailUrl}
+                      src={result.thumbnailUrl || "/placeholder-video.png"}
                       alt={result.title}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        if (result.type === "video") {
+                          e.currentTarget.src = `https://i.ytimg.com/vi/${result.id}/mqdefault.jpg`
+                        }
+                        e.currentTarget.onerror = () => {
+                          e.currentTarget.src = "/placeholder-video.png"
+                        }
+                      }}
                     />
                     {result.type === "video" && result.duration && (
                       <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-white text-xs rounded">

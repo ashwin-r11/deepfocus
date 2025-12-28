@@ -8,12 +8,23 @@ import { Notepad } from "@/components/notepad"
 import { ToolsPanel } from "@/components/tools-panel"
 import { PlaylistModal } from "@/components/playlist-modal"
 import { ScheduleModal } from "@/components/schedule-modal"
+import { DrivePanel } from "@/components/drive-panel"
+import { AIPanel } from "@/components/ai-panel"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PenLine, FolderOpen, Sparkles } from "lucide-react"
 
 interface VideoInfo {
   videoId: string
   title: string
   channelName?: string
   description?: string
+}
+
+interface Note {
+  id: number
+  timestamp: string
+  timestampSeconds: number
+  text: string
 }
 
 export default function WatchPage() {
@@ -27,6 +38,8 @@ export default function WatchPage() {
   const [duration, setDuration] = useState(0)
   const [showPlaylistModal, setShowPlaylistModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [activeTab, setActiveTab] = useState("notes")
   const lastSaveRef = useRef(0)
 
   // Fetch video info from YouTube API
@@ -117,9 +130,49 @@ export default function WatchPage() {
           <ToolsPanel />
         </div>
 
-        {/* Right Column - Notepad (full width on mobile, 35% on desktop) */}
+        {/* Right Column - Tabbed Panel (full width on mobile, 35% on desktop) */}
         <div className="w-full lg:w-[35%] flex flex-col border-t lg:border-t-0 lg:border-l border-neutral-900 min-h-[50vh] lg:min-h-0">
-          <Notepad videoId={videoInfo.videoId} currentVideoTime={currentTime} />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+            <TabsList className="w-full justify-start rounded-none border-b border-neutral-800 bg-neutral-950 h-12 px-2">
+              <TabsTrigger 
+                value="notes" 
+                className="data-[state=active]:bg-neutral-800 data-[state=active]:text-white gap-2"
+              >
+                <PenLine className="h-4 w-4" />
+                Notes
+              </TabsTrigger>
+              <TabsTrigger 
+                value="drive" 
+                className="data-[state=active]:bg-neutral-800 data-[state=active]:text-white gap-2"
+              >
+                <FolderOpen className="h-4 w-4" />
+                Drive
+              </TabsTrigger>
+              <TabsTrigger 
+                value="ai" 
+                className="data-[state=active]:bg-neutral-800 data-[state=active]:text-white gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                AI
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="notes" className="flex-1 m-0 overflow-hidden">
+              <Notepad 
+                videoId={videoInfo.videoId} 
+                currentVideoTime={currentTime}
+                onNotesChange={setNotes}
+              />
+            </TabsContent>
+            <TabsContent value="drive" className="flex-1 m-0 overflow-hidden">
+              <DrivePanel />
+            </TabsContent>
+            <TabsContent value="ai" className="flex-1 m-0 overflow-hidden">
+              <AIPanel 
+                videoTitle={videoInfo.title} 
+                notes={notes.map(n => `[${n.timestamp}] ${n.text}`).join('\n')}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
