@@ -9,22 +9,14 @@ import { ToolsPanel } from "@/components/tools-panel"
 import { PlaylistModal } from "@/components/playlist-modal"
 import { ScheduleModal } from "@/components/schedule-modal"
 import { DrivePanel } from "@/components/drive-panel"
-import { AIPanel } from "@/components/ai-panel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PenLine, FolderOpen, Sparkles } from "lucide-react"
+import { PenLine, FolderOpen } from "lucide-react"
 
 interface VideoInfo {
   videoId: string
   title: string
   channelName?: string
   description?: string
-}
-
-interface Note {
-  id: number
-  timestamp: string
-  timestampSeconds: number
-  text: string
 }
 
 export default function WatchPage() {
@@ -38,7 +30,6 @@ export default function WatchPage() {
   const [duration, setDuration] = useState(0)
   const [showPlaylistModal, setShowPlaylistModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [notes, setNotes] = useState<Note[]>([])
   const [activeTab, setActiveTab] = useState("notes")
   const lastSaveRef = useRef(0)
 
@@ -148,29 +139,15 @@ export default function WatchPage() {
                 <FolderOpen className="h-4 w-4" />
                 Drive
               </TabsTrigger>
-              <TabsTrigger 
-                value="ai" 
-                className="data-[state=active]:bg-neutral-800 data-[state=active]:text-white gap-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                AI
-              </TabsTrigger>
             </TabsList>
             <TabsContent value="notes" className="flex-1 m-0 overflow-hidden">
               <Notepad 
                 videoId={videoInfo.videoId} 
                 currentVideoTime={currentTime}
-                onNotesChange={setNotes}
               />
             </TabsContent>
             <TabsContent value="drive" className="flex-1 m-0 overflow-hidden">
               <DrivePanel />
-            </TabsContent>
-            <TabsContent value="ai" className="flex-1 m-0 overflow-hidden">
-              <AIPanel 
-                videoTitle={videoInfo.title} 
-                notes={notes.map(n => `[${n.timestamp}] ${n.text}`).join('\n')}
-              />
             </TabsContent>
           </Tabs>
         </div>

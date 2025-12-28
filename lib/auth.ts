@@ -27,8 +27,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // Google Classroom - read courses and coursework
             "https://www.googleapis.com/auth/classroom.courses.readonly",
             "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
-            // Google Gemini AI - generative language
-            "https://www.googleapis.com/auth/generative-language.retriever",
           ].join(" "),
           access_type: "offline",
           prompt: "consent",
